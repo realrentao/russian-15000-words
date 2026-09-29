@@ -518,7 +518,7 @@
   function init() {
     buildFlat();
     loadLS();
-    el("bookTitle").textContent = META.title || "俄语单词 7000 高频词";
+    el("bookTitle").textContent = META.title || "俄语单词随身背";
     el("bookAuthor").textContent = META.author || "";
     renderToc();
 
