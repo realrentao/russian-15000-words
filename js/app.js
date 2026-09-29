@@ -5,8 +5,8 @@
   var META = window.BOOK_META || { title: "", author: "", grupos: [], totalAll: 0 };
   var DATA = {};            // gid -> 分册数据
   var AUDIO = "audio/";
-  var LS_DONE = "sv15000_done", LS_THEME = "sv15000_theme", LS_POS = "sv15000_pos";
-  var LS_SRS = "sv15000_srs";
+  var LS_DONE = "ru7000_done", LS_THEME = "ru7000_theme", LS_POS = "ru7000_pos";
+  var LS_SRS = "ru7000_srs";
   var SRS_INT = [0, 10 * 60 * 1000, 60 * 60 * 1000, 864e5, 3 * 864e5, 7 * 864e5];
   var study = { active: false, mode: "card", scope: "sec", items: [], i: 0, total: 0,
                 known: 0, unknown: 0, cur: null, dueOnly: false, srs: {} };
@@ -127,8 +127,8 @@
 
       var gr = META.grupos[state.g];
       var key = pm.gid + "-" + sm.no, isDone = !!state.done[key];
-      var h = '<div class="crumb">' + esc(gr.name) + ' › Parte ' + pm.no
-        + ' <b>' + esc(pm.name) + '</b> · Sección ' + sm.no + '</div>'
+      var h = '<div class="crumb">' + esc(gr.name) + ' › 大类 ' + pm.no
+        + ' <b>' + esc(pm.name) + '</b> · 小节 ' + sm.no + '</div>'
         + '<h1 class="sec-title">' + esc(sm.name) + '</h1>'
         + '<div class="sec-meta"><span>终极分类词 ' + sec.w.length + '</span>'
         + '<span>经典实用句 ' + sec.s.length + '</span>'
@@ -483,7 +483,7 @@
         h += '<div class="sr-item" data-gid="' + gid + '" data-sno="' + sno + '">'
           + '<span class="sr-es">' + esc(r.es) + '</span>'
           + '<span class="sr-zh">' + esc(r.zh) + '</span>'
-          + '<span class="sr-pos">Parte ' + r.f.no + ' · ' + esc(r.f.name) + '</span></div>';
+          + '<span class="sr-pos">大类 ' + r.f.no + ' · ' + esc(r.f.name) + '</span></div>';
       });
       if (!res.length) h += '<div class="empty">没有匹配的词条</div>';
       box.innerHTML = h;
@@ -518,7 +518,7 @@
   function init() {
     buildFlat();
     loadLS();
-    el("bookTitle").textContent = META.title || "俄语单词随身背";
+    el("bookTitle").textContent = META.title || "俄语单词 7000 高频词";
     el("bookAuthor").textContent = META.author || "";
     renderToc();
 
@@ -593,9 +593,9 @@
     el("pronBtn").onclick = function () {
       document.body.classList.toggle("hide-pron");
       var on = !document.body.classList.contains("hide-pron");
-      localStorage.setItem("sv15000_pron", on ? "1" : "0");
+      localStorage.setItem("ru7000_pron", on ? "1" : "0");
     };
-    if (localStorage.getItem("sv15000_pron") === "0")
+    if (localStorage.getItem("ru7000_pron") === "0")
       document.body.classList.add("hide-pron");
     el("helpClose").onclick = function () { el("helpModal").classList.add("hidden"); };
     el("helpModal").onclick = function (e) { if (e.target === this) this.classList.add("hidden"); };
@@ -831,7 +831,7 @@
       var blob = new Blob([JSON.stringify(data, null, 1)], { type: "application/json" });
       var url = URL.createObjectURL(blob);
       var a = document.createElement("a");
-      a.href = url; a.download = "russian-15000-progress.json";
+      a.href = url; a.download = "russian-7000-progress.json";
       document.body.appendChild(a); a.click(); a.remove();
       setTimeout(function () { URL.revokeObjectURL(url); }, 1500);
     } catch (e) { alert("导出失败：" + e.message); }
