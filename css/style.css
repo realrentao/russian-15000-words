@@ -172,6 +172,56 @@ button{cursor:pointer;background:none;border:none}
   .case-item{min-height:46px;padding:6px 9px}
 }
 
+/* ===== 例句：按实际格高亮名词 ===== */
+.case-hl{position:relative;display:inline;padding:0 1px;border-radius:3px;
+  font-weight:600;cursor:help;border-bottom:2px solid currentColor}
+.case-hl small{font-size:9px;font-weight:700;vertical-align:super;margin-left:1px;
+  letter-spacing:.5px;opacity:.9;font-style:normal}
+.case-c0{color:#1d4ed8;background:rgba(29,78,216,.10)}   /* 主格 */
+.case-c1{color:#047857;background:rgba(4,120,87,.10)}   /* 属格 */
+.case-c2{color:#7c3aed;background:rgba(124,58,237,.10)}  /* 与格 */
+.case-c3{color:#c2410c;background:rgba(194,65,12,.10)}   /* 宾格 */
+.case-c4{color:#0d9488;background:rgba(13,148,136,.10)}  /* 工具格 */
+.case-c5{color:#be123c;background:rgba(190,18,60,.10)}   /* 前置格 */
+html[data-theme="dark"] .case-c0{color:#7aa2ff;background:rgba(122,162,255,.15)}
+html[data-theme="dark"] .case-c1{color:#34d399;background:rgba(52,211,153,.15)}
+html[data-theme="dark"] .case-c2{color:#c4b5fd;background:rgba(196,181,253,.15)}
+html[data-theme="dark"] .case-c3{color:#fdba74;background:rgba(253,186,116,.15)}
+html[data-theme="dark"] .case-c4{color:#5eead4;background:rgba(94,234,212,.15)}
+html[data-theme="dark"] .case-c5{color:#fb7185;background:rgba(251,113,133,.15)}
+
+/* ===== 测验：按格筛选 + 模式切换 ===== */
+.quiz-ctl{display:flex;flex-wrap:wrap;gap:8px;align-items:center;
+  padding:6px 8px;margin:4px 0;border:1px solid var(--line);border-radius:9px;
+  background:var(--bg)}
+.quiz-ctl.hidden{display:none}
+.qmodes{display:inline-flex;gap:2px;background:var(--card);border:1px solid var(--line);
+  border-radius:8px;padding:2px}
+.qm{padding:4px 10px;border-radius:6px;font-size:12.5px;color:var(--tx2);font-weight:600}
+.qm.active{background:var(--gold);color:#fff}
+.case-filter{display:inline-flex;flex-wrap:wrap;gap:3px;align-items:center}
+.cf-cap{font-size:11px;color:var(--tx3);font-weight:700;margin-right:2px}
+.cfb{padding:3px 9px;border-radius:6px;font-size:12px;color:var(--tx2);
+  border:1px solid var(--line);font-weight:600;min-height:30px}
+.cfb.active{background:var(--gold-l);border-color:var(--gold);color:var(--gold)}
+.case-filter.hidden{display:none}
+.q-prompt-case{font-size:12px;color:var(--tx3);margin:2px 0 8px;font-weight:600}
+.q-write-input{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:9px;
+  background:var(--card);color:var(--tx);font-size:17px;margin:6px 0;outline:none}
+.q-write-input:focus{border-color:var(--gold)}
+.q-write-input.ok{border-color:var(--ok);background:rgba(14,159,110,.08)}
+.q-write-input.no{border-color:var(--red);background:rgba(213,43,30,.07)}
+.q-check{margin:2px 0 6px}
+.q-case-opts{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:6px}
+.q-case-opts .qopt{padding:10px 6px;border:1px solid var(--line);border-radius:9px;
+  background:var(--card);color:var(--tx);font-size:14px;font-weight:600;min-height:44px}
+.q-case-opts .qopt.correct{background:rgba(14,159,110,.15);border-color:var(--ok);color:var(--ok)}
+.q-case-opts .qopt.wrong{background:rgba(213,43,30,.12);border-color:var(--red);color:var(--red)}
+.q-form-show{font-size:22px;font-weight:700;margin:4px 0}
+@media (max-width:520px){
+  .q-case-opts{grid-template-columns:repeat(2,1fr)}
+}
+
 /* 拼音 / 音标 */
 .row .ipa{font-size:12px;color:var(--tx3);font-style:italic;margin-left:3px;
   font-family:"Charis SIL","Doulos SIL","Segoe UI",serif}

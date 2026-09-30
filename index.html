@@ -111,7 +111,23 @@
     </select>
     <label class="chk"><input type="checkbox" id="studyShuffle" checked><span>打乱</span></label>
     <label class="chk"><input type="checkbox" id="studyDue"><span>仅到期</span></label>
-  </div>
+    <div class="quiz-ctl hidden" id="quizCtl">
+      <div class="qmodes" id="qmodes">
+        <button class="qm active" data-qm="mean">词义</button>
+        <button class="qm" data-qm="write">写格</button>
+        <button class="qm" data-qm="identify">辨格</button>
+      </div>
+      <div class="case-filter hidden" id="caseFilter">
+        <span class="cf-cap">格</span>
+        <button class="cfb active" data-case="all">全部</button>
+        <button class="cfb" data-case="0">主格</button>
+        <button class="cfb" data-case="1">属格</button>
+        <button class="cfb" data-case="2">与格</button>
+        <button class="cfb" data-case="3">宾格</button>
+        <button class="cfb" data-case="4">工具格</button>
+        <button class="cfb" data-case="5">前置格</button>
+      </div>
+    </div>
   <div class="study-body" id="studyBody"></div>
   <div class="study-foot" id="studyFoot"></div>
 </div>

@@ -9,7 +9,7 @@
   var LS_SRS = "ru7000_srs";
   var SRS_INT = [0, 10 * 60 * 1000, 60 * 60 * 1000, 864e5, 3 * 864e5, 7 * 864e5];
   var study = { active: false, mode: "card", scope: "sec", items: [], i: 0, total: 0,
-                known: 0, unknown: 0, cur: null, dueOnly: false, srs: {} };
+    known: 0, unknown: 0, cur: null, dueOnly: false, srs: {}, quizMode: "mean", caseFilter: "all" };
 
   var state = { g: 0, p: 0, s: 0, done: {}, theme: "light" };
   var FLAT = [];            // 全局 Parte 顺序 [{g,p,gid,no,name}]
@@ -188,6 +188,25 @@
     return h + '</div>';
   }
 
+  /* 例句中名词按实际格高亮：s[7] = [[start, end, caseIdx], ...] */
+  var CASE_NAMES = ["主格", "属格", "与格", "宾格", "工具格", "前置格"];
+  function sentHtml(ru, marks) {
+    if (!ru) return "";
+    if (!marks || !marks.length) return esc(ru);
+    var h = "", last = 0, ms = marks.slice().sort(function (a, b) { return a[0] - b[0]; });
+    for (var i = 0; i < ms.length; i++) {
+      var st = ms[i][0], en = ms[i][1], ci = ms[i][2];
+      if (st < last) continue;                 // 安全：不重叠
+      h += esc(ru.slice(last, st));
+      h += '<span class="case-hl case-c' + ci + '" title="' + CASE_NAMES[ci]
+        + '：' + esc(ru.slice(st, en)) + '">' + esc(ru.slice(st, en))
+        + '<small>' + CASE_NAMES[ci] + '</small></span>';
+      last = en;
+    }
+    h += esc(ru.slice(last));
+    return h;
+  }
+
   /* 名词六格变位：格名 + 形式 + 各自独立发音（缺失则占位静默） */
   function casesHtml(gid, sno, kind, i, cases) {
     var base = uid(gid, sno, kind, i);
@@ -223,7 +242,7 @@
     arr.forEach(function (it, i) {
       var id = uid(gid, sno, kind, i);
       h += '<div class="sent" id="' + id + '">'
-        + '<div class="s-es" data-a="' + AUDIO + it[3] + '">' + esc(it[0]) + '</div>'
+        + '<div class="s-es" data-a="' + AUDIO + it[3] + '">' + sentHtml(it[0], it[7]) + '</div>'
         + (it[6] ? '<div class="s-ipa pron">/' + esc(it[6]) + '/</div>' : '')
         + '<div class="s-zh" data-a="' + AUDIO + it[4] + '">' + esc(it[1]) + '</div>'
         + (it[5] ? '<div class="s-py pron">' + esc(it[5]) + '</div>' : '')
@@ -754,7 +773,8 @@
             out.push({
               uid: uid(p.gid, p.sec.no, kind, i), kind: kind,
               es: it[(kind === "s" ? 0 : 1)], zh: it[(kind === "s" ? 1 : 0)],
-              ae: it[3], az: it[4], py: it[5], ipa: it[6]
+              ae: it[3], az: it[4], py: it[5], ipa: it[6],
+              cases: (kind === "w" ? (it[7] || null) : null)
             });
           });
         });
@@ -770,10 +790,20 @@
     study.mode = (document.querySelector(".stab.active") || { getAttribute: function () { return "card"; } })
       .getAttribute("data-smode");
     study.dueOnly = el("studyDue").checked;
+    // 测验子模式 + 格筛选
+    var qmEl = document.querySelector("#qmodes .qm.active") || { getAttribute: function () { return "mean"; } };
+    study.quizMode = qmEl.getAttribute("data-qm") || "mean";
+    el("quizCtl").classList.toggle("hidden", study.mode !== "quiz");
+    el("caseFilter").classList.toggle("hidden", !(study.mode === "quiz" && study.quizMode !== "mean"));
     el("study").classList.remove("hidden");
     document.body.classList.add("study-on");
     buildStudyItems(study.scope, function (items) {
-      if (study.mode === "quiz") items = items.filter(function (x) { return x.kind !== "s"; });
+      if (study.mode === "quiz") {
+        items = items.filter(function (x) { return x.kind !== "s"; });   // 测验不含例句
+        if (study.quizMode !== "mean") {                                  // 按格测验只取有六格的名词
+          items = items.filter(function (x) { return x.kind === "w" && x.cases && x.cases.length === 6; });
+        }
+      }
       if (study.dueOnly) {
         var due = items.filter(function (it) { var r = study.srs[it.uid]; return !r || r.due <= Date.now(); });
         if (due.length) items = due;
@@ -794,7 +824,8 @@
     if (study.i >= study.items.length) { renderStudyDone(); return; }
     study.cur = study.items[study.i];
     if (study.mode === "card") renderCard(study.cur, el("studyBody"), el("studyFoot"));
-    else renderQuiz(study.cur, el("studyBody"), el("studyFoot"));
+    else if (study.quizMode === "mean") renderQuiz(study.cur, el("studyBody"), el("studyFoot"));
+    else renderQuizCase(study.cur, el("studyBody"), el("studyFoot"));
   }
 
   function renderCard(it, body, foot) {
@@ -852,6 +883,65 @@
       };
     });
     foot.innerHTML = '<div class="study-prog">' + (study.i + 1) + ' / ' + study.total + '</div>';
+  }
+
+  function norm(s) {
+    return (s || "").replace(/́/g, "").replace(/ё/g, "е").replace(/Ё/g, "Е")
+      .trim().toLowerCase();
+  }
+
+  /* 按格测验：写格（给词写指定格词形）/ 辨格（给词形选是第几格） */
+  function renderQuizCase(it, body, foot) {
+    body.onclick = null;
+    var cf = study.caseFilter;                       // "all" 或 "0".."5"
+    var ci = (cf === "all") ? Math.floor(Math.random() * 6) : parseInt(cf, 10);
+    var cases = it.cases;                            // [[name, form, audio], x6]
+    if (study.quizMode === "write") {
+      var tgt = cases[ci];
+      body.innerHTML = '<div class="q-prompt-case">请写出【' + CASE_NAMES[ci] + '】形式</div>'
+        + '<div class="quiz-prompt"><div class="qp-zh">' + esc(it.zh) + '</div>'
+        + '<button class="cf-spk spk" data-a="' + AUDIO + it.ae + '" title="主格发音">🔊 主格</button></div>'
+        + '<input class="q-write-input" id="qw" placeholder="输入' + CASE_NAMES[ci] + '词形" '
+        + 'autocomplete="off" autocapitalize="off" spellcheck="false">'
+        + '<button class="btn primary q-check" id="qcheck">检查</button>';
+      foot.innerHTML = '<div class="study-prog">' + (study.i + 1) + ' / ' + study.total + '</div>';
+      var input = el("qw");
+      function checkWrite() {
+        var ok = (norm(input.value) === norm(tgt[1]));
+        input.classList.add(ok ? "ok" : "no");
+        input.value = tgt[1];
+        input.disabled = true;
+        say(AUDIO + tgt[2], null);
+        grade(ok);
+        setTimeout(renderStudy, 1500);
+      }
+      el("qcheck").onclick = checkWrite;
+      input.addEventListener("keydown", function (e) { if (e.key === "Enter") checkWrite(); });
+      setTimeout(function () { try { input.focus(); } catch (e) { } }, 60);
+    } else {
+      var tgt2 = cases[ci];
+      body.innerHTML = '<div class="q-prompt-case">这个词形是第几格？</div>'
+        + '<div class="q-form-show">' + esc(tgt2[1]) + '</div>'
+        + '<button class="cf-spk spk" data-a="' + AUDIO + tgt2[2] + '" title="发音">🔊 听发音</button>'
+        + '<div class="q-case-opts">' + CASE_NAMES.map(function (n, k) {
+          return '<button class="qopt" data-ci="' + k + '">' + n + '</button>';
+        }).join("") + '</div>';
+      body.querySelectorAll(".qopt").forEach(function (b) {
+        b.onclick = function () {
+          var chosen = parseInt(b.getAttribute("data-ci"), 10), ok = (chosen === ci);
+          body.querySelectorAll(".qopt").forEach(function (x) {
+            x.disabled = true;
+            var xc = parseInt(x.getAttribute("data-ci"), 10);
+            if (xc === ci) x.classList.add("correct");
+            else if (x === b) x.classList.add("wrong");
+          });
+          say(AUDIO + tgt2[2], null);
+          grade(ok);
+          setTimeout(renderStudy, 1500);
+        };
+      });
+      foot.innerHTML = '<div class="study-prog">' + (study.i + 1) + ' / ' + study.total + '</div>';
+    }
   }
 
   function grade(known) {
@@ -922,6 +1012,20 @@
     el("studyScope").onchange = startStudy;
     el("studyShuffle").onchange = startStudy;
     el("studyDue").onchange = startStudy;
+    document.querySelectorAll("#qmodes .qm").forEach(function (b) {
+      b.onclick = function () {
+        document.querySelectorAll("#qmodes .qm").forEach(function (x) { x.classList.remove("active"); });
+        b.classList.add("active");
+        startStudy();
+      };
+    });
+    document.querySelectorAll("#caseFilter .cfb").forEach(function (b) {
+      b.onclick = function () {
+        document.querySelectorAll("#caseFilter .cfb").forEach(function (x) { x.classList.remove("active"); });
+        b.classList.add("active");
+        startStudy();
+      };
+    });
   }
 
   window.__SV = { state: state, P: P, DATA: DATA, META: META, FLAT: FLAT, study: study };
