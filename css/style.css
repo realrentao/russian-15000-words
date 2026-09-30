@@ -148,18 +148,19 @@ button{cursor:pointer;background:none;border:none}
 .cases-hd .tag{font-size:10px;padding:1px 6px;border-radius:20px;
   background:var(--gold-l);color:var(--gold);font-weight:700}
 .cases-hd small{font-weight:400;opacity:.85}
-.case-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(108px,1fr));gap:6px}
-.case-item{display:flex;align-items:center;gap:6px;min-height:44px;padding:6px 8px;
+.case-grid{display:flex;flex-wrap:wrap;gap:6px}
+.case-item{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:6px 8px;
   background:var(--bg);border:1px solid var(--line);border-radius:8px;
-  color:var(--tx);cursor:pointer;text-align:left;font:inherit;width:100%;
+  color:var(--tx);cursor:pointer;text-align:left;font:inherit;
+  max-width:100%;
   transition:border-color .15s,background .15s,color .15s}
 .case-item:hover{border-color:var(--gold)}
 .case-item.cur{background:var(--gold-l);border-color:var(--gold);
   box-shadow:0 0 0 3px rgba(0,57,166,.13)}
 .case-name{font-size:10.5px;color:var(--tx3);background:var(--card);
   border:1px solid var(--line);border-radius:4px;padding:1px 4px;flex:0 0 auto}
-.case-form{flex:1;min-width:0;font-size:14.5px;font-weight:600;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.25}
+.case-form{flex:0 1 auto;min-width:0;font-size:14.5px;font-weight:600;
+  white-space:nowrap;line-height:1.25}
 .case-spk{font-size:12px;color:var(--tx3);flex:0 0 auto}
 .case-item:hover .case-spk,.case-item.cur .case-spk{color:var(--gold)}
 .case-item.on .case-spk{color:var(--gold)}
@@ -168,9 +169,9 @@ button{cursor:pointer;background:none;border:none}
 .case-item.missing:hover{border-color:var(--line)}
 .case-item.missing .case-form{color:var(--tx3);font-weight:500}
 @media (max-width:520px){
-  .case-grid{grid-template-columns:repeat(2,1fr)}
-  .case-item{min-height:46px;padding:6px 9px}
-  .case-form{font-size:13px}
+  .case-grid{flex-direction:column;flex-wrap:nowrap;gap:5px}
+  .case-item{min-height:46px;padding:6px 9px;width:100%}
+  .case-form{font-size:14px;flex:1 1 auto}
 }
 
 /* ===== 例句：按实际格高亮名词 ===== */
