@@ -159,7 +159,7 @@ button{cursor:pointer;background:none;border:none}
 .case-name{font-size:10.5px;color:var(--tx3);background:var(--card);
   border:1px solid var(--line);border-radius:4px;padding:1px 4px;flex:0 0 auto}
 .case-form{flex:1;min-width:0;font-size:14.5px;font-weight:600;
-  word-break:break-word;line-height:1.25}
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.25}
 .case-spk{font-size:12px;color:var(--tx3);flex:0 0 auto}
 .case-item:hover .case-spk,.case-item.cur .case-spk{color:var(--gold)}
 .case-item.on .case-spk{color:var(--gold)}
@@ -170,6 +170,7 @@ button{cursor:pointer;background:none;border:none}
 @media (max-width:520px){
   .case-grid{grid-template-columns:repeat(2,1fr)}
   .case-item{min-height:46px;padding:6px 9px}
+  .case-form{font-size:13px}
 }
 
 /* ===== 例句：按实际格高亮名词 ===== */
