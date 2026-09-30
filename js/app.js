@@ -180,11 +180,39 @@
         + '<span class="pos">' + esc(it[2]) + '</span></div>'
         + '<div class="zh" data-a="' + AUDIO + it[4] + '">' + esc(it[0]) + '</div>'
         + (it[5] ? '<div class="py pron">' + esc(it[5]) + '</div>' : '')
+        + (it[7] && it[7].length ? casesHtml(gid, sno, kind, i, it[7]) : '')
         + '</div>'
         + '<button class="spk" data-a="' + AUDIO + it[3] + '" title="俄语发音">🔊</button>'
         + '<button class="spk" data-a="' + AUDIO + it[4] + '" title="中文发音">汉</button></div>';
     });
     return h + '</div>';
+  }
+
+  /* 名词六格变位：格名 + 形式 + 各自独立发音（缺失则占位静默） */
+  function casesHtml(gid, sno, kind, i, cases) {
+    var base = uid(gid, sno, kind, i);
+    var h = '<div class="cases"><div class="cases-hd">六格变位'
+      + '<span class="tag">' + cases.length + '</span>'
+      + '<small>点单格发音 · 连播只放主格与中文</small></div>'
+      + '<div class="case-grid">';
+    cases.forEach(function (c, k) {
+      var name = c[0] || "", form = c[1] || "", audio = c[2] || "";
+      var cid = base + "_c" + k;
+      if (!audio) {
+        // 音频缺失：占位，不带 data-a，点击静默（绝不播放其他格的声音）
+        h += '<div class="case-item missing" id="' + cid + '" title="暂无发音资源">'
+          + '<span class="case-name">' + esc(name) + '</span>'
+          + '<span class="case-form">' + esc(form || "—") + '</span>'
+          + '<span class="case-spk">✕</span></div>';
+      } else {
+        h += '<button class="case-item" id="' + cid + '" data-a="' + AUDIO + audio + '"'
+          + ' title="播放「' + esc(name) + '」' + esc(form) + '">'
+          + '<span class="case-name">' + esc(name) + '</span>'
+          + '<span class="case-form">' + esc(form) + '</span>'
+          + '<span class="case-spk">🔊</span></button>';
+      }
+    });
+    return h + '</div></div>';
   }
 
   function blockSent(arr) {
@@ -391,6 +419,7 @@
   }
 
   function startPlay() {
+    try { SP.pause(); clearSP(); } catch (e) { }   // 单条发音让位给连播
     if (P.dirty || !P.list.length) {
       var sc = el("scopeSel").value;
       el("plLabel").textContent = sc === "all" ? "正在准备全书播放…"
@@ -434,25 +463,51 @@
     else { highlight(target); updateProgress(); }
   }
 
-  function say(src, btn) {
-    var a = new Audio(src);
-    a.playbackRate = rate();
-    if (btn) {
-      btn.classList.add("on");
-      a.onended = a.onerror = function () { btn.classList.remove("on"); };
-    }
-    var pr = a.play();
-    if (pr && pr.catch) pr.catch(function () { if (btn) btn.classList.remove("on"); });
+  /* 单条发音：全局唯一播放器。快速连点 = 中断重放（永不叠加）；
+     连播中点击 = 明确中断连播；音频缺失 = 静默收尾，不播放其他格的声音。 */
+  var SP = new Audio(), SP_EL = null, SP_GEN = 0;
+  function clearSP() {
+    if (SP_EL) { try { SP_EL.classList.remove("on"); } catch (e) { } }
+    SP_EL = null;
   }
+  function playSingle(src, el) {
+    if (!src) return;                            // 占位/缺失：静默
+    if (P.playing) pausePlay();                  // 中断连播
+    clearHL();
+    clearSP();                                   // 清掉上一条的激活态
+    try { SP.pause(); } catch (e) { }            // 取消上一条，避免叠加
+    try { SP.currentTime = 0; } catch (e) { }
+    SP.src = src;
+    SP.playbackRate = rate();
+    var myGen = ++SP_GEN;                         // 代次令牌：只有最新点击的回调可收尾
+    if (el) {
+      el.classList.add("on");
+      SP_EL = el;
+      var box = el.closest
+        ? (el.closest(".case-item") || el.closest(".row") || el.closest(".sent"))
+        : null;
+      if (box && box.id) highlight(box.id);
+    }
+    function finish() {                           // 收尾：仅当仍是最新一次点击时才清高亮
+      if (SP_GEN !== myGen) return;
+      clearHL();
+      clearSP();
+    }
+    SP.onended = SP.onerror = finish;
+    var pr = SP.play();
+    if (pr && pr.catch) pr.catch(finish);         // 被拒绝（如自动播放限制）：静默收尾
+  }
+  function say(src, btn) { playSingle(src, btn); }
 
   /* 点读（事件委托） */
   document.addEventListener("click", function (e) {
     var t = e.target && e.target.closest ? e.target.closest("[data-a]") : null;
     if (!t) return;
+    if (t.classList.contains("missing")) return;  // 占位项：静默，不发音
     var src = t.getAttribute("data-a");
     if (!src) return;
-    if (t.classList.contains("spk")) { e.stopPropagation(); say(src, t); }
-    else say(src, null);
+    if (t.classList.contains("spk")) e.stopPropagation();
+    playSingle(src, t);
   });
 
   /* ---------- 搜索 ---------- */
